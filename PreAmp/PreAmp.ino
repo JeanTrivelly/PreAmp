@@ -12,7 +12,8 @@
 /************ PINs Definition ************/
 /* ON/OFF */
 #define ON_OFF_TRIGGER_PIN            1
-#define ON_OFF_LED_PIN               38
+#define ON_LED_PIN                   38
+#define OFF_LED_PIN                  18
 #define ON_OFF_BUTTON_PIN            27
 
 /* IRDA */
@@ -198,8 +199,10 @@ void setup()
   pinMode(ON_OFF_BUTTON_PIN, INPUT);
   attachInterrupt(ON_OFF_BUTTON_PIN, isrPwrService, RISING);
   
-  pinMode(ON_OFF_LED_PIN, OUTPUT);
-  digitalWrite(ON_OFF_LED_PIN, LED_OFF);  // LED PWR OFF
+  pinMode(ON_LED_PIN, OUTPUT);
+  pinMode(OFF_LED_PIN, OUTPUT);
+  digitalWrite(ON_LED_PIN, LED_OFF);  // LED PWR OFF
+  digitalWrite(OFF_LED_PIN, LED_ON);  // LED PWR OFF
 
   /* Trigger */
   mTrigger = 0;
@@ -369,7 +372,8 @@ void loop() {
       // Restore source from EEPROM
       changeSource(EEPROM.read(EEPROM_SOURCE_ADDRESS));
       
-      digitalWrite(ON_OFF_LED_PIN, LED_ON); // LED ON
+      digitalWrite(ON_LED_PIN, LED_ON); // LED ON
+      digitalWrite(OFF_LED_PIN, LED_OFF); // LED ON
     }
 
     if (digitalRead(ON_OFF_TRIGGER_PIN) == false && mPoweredThxTrigger == true) {
@@ -533,7 +537,8 @@ void loop() {
         digitalWrite(mSources[i], LED_OFF);   // LED off
       }
       
-      digitalWrite(ON_OFF_LED_PIN, LED_OFF); // LED off
+      digitalWrite(ON_LED_PIN, LED_OFF); // LED off
+      digitalWrite(OFF_LED_PIN, LED_ON); // LED off
     }
   }
 
