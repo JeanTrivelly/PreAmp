@@ -1,59 +1,56 @@
 #include <IRremote.h>
 #include <Encoder.h>
 #include <EEPROM.h>
+#include <Wire.h>
 
 /* This code is used to be run on Teensy 2++ */
 
-#define DEBUG
+#define DEBUG1
 #define DEBUG2
 
 #define APPLE_REMOTE // Use APPLE Remote control.
 
 /************ PINs Definition ************/
 /* ON/OFF */
-#define ON_OFF_TRIGGER_PIN            1
-#define ON_LED_PIN                   38
-#define OFF_LED_PIN                  18
+#define ON_OFF_TRIGGER_PIN            4
+#define ON_LED_PIN                   20
+#define OFF_LED_PIN                  21
 #define ON_OFF_BUTTON_PIN            27
 
 /* IRDA */
-#define IR_RECV_PIN                   0
+#define IR_RECV_PIN                   5
+
+#define PIN6_RESERVED                 6 /* PIN 6 is dedicated to on board led */
 
 /* Source Selection */
-#define SOURCE_KNOB_PIN1              2
-#define SOURCE_KNOB_PIN2              3
+#define SOURCE_KNOB_PIN1             18
+#define SOURCE_KNOB_PIN2             19
 #define NB_SOURCES 7
-#define SOURCE1_SELECT_PIN            4 /* SPDIF Coax 1 */
-#define SOURCE2_SELECT_PIN            5 /* SPDIF Coax 2 */
-#define PIN6_RESERVED                 6 /* PIN 6 is dedicated to on board led */
-#define SOURCE3_SELECT_PIN            7 /* SPDIF Optical 1 */
-#define SOURCE4_SELECT_PIN            8 /* SPDIF Optical 2 */
-#define SOURCE5_SELECT_PIN            9 /* USB */
-#define SOURCE6_SELECT_PIN           10 /* Analog 1 Aux */
-#define SOURCE7_SELECT_PIN           11 /* Analog 2 Phono */
+#define SOURCE1_SELECT_PIN           11 /* SPDIF Coax 1 */
+#define SOURCE2_SELECT_PIN           12 /* SPDIF Coax 2 */
+#define SOURCE3_SELECT_PIN           13 /* SPDIF Optical 1 */
+#define SOURCE4_SELECT_PIN           14 /* SPDIF Optical 2 */
+#define SOURCE5_SELECT_PIN           15 /* USB */
+#define SOURCE6_SELECT_PIN           16 /* Analog 1 Aux */
+#define SOURCE7_SELECT_PIN           17 /* Analog 2 Phono */
 
 /* Volume Mgmt */
+#define VOLUME_I2C_SCL                0
+#define VOLUME_I2C_SDA                1
 #define VOLUME_UP_PIN                39 /* VOLUME MOTOR UP */
 #define VOLUME_DOWN_PIN              40 /* VOLUME MOTOR DOWN */
 #define VOLUME_SENSE_GENERAL         A3 /* PIN 41 */
 #define VOLUME_SENSE_BALANCE         A4 /* PIN 42 */
-#define VOLUME_SENSE_BASS            A5 /* PIN 43 */
+#define VOLUME_SENSE_TWEETER         A5 /* PIN 43 */
 #define VOLUME_SENSE_MEDIUM          A6 /* PIN 44 */
-#define VOLUME_SENSE_TWEETER         A7 /* PIN 45 */
-#define VOLUME_SELECT_TWEETER_RIGHT  12
-#define VOLUME_SELECT_TWEETER_LEFT   13
-#define VOLUME_SELECT_MEDIUM_RIGHT   14
-#define VOLUME_SELECT_MEDIUM_LEFT    15
-#define VOLUME_SELECT_BASS_RIGHT     16
-#define VOLUME_SELECT_BASS_LEFT      17
-#define VOLUME_BIT_7                 26
-#define VOLUME_BIT_6                 25
-#define VOLUME_BIT_5                 24
-#define VOLUME_BIT_4                 23
-#define VOLUME_BIT_3                 22
-#define VOLUME_BIT_2                 21
-#define VOLUME_BIT_1                 20
-#define VOLUME_BIT_0                 19
+#define VOLUME_SENSE_BASS            A7 /* PIN 45 */
+
+#define VOLUME_SELECT_BASS_RIGHT_ADDR     0x40 /* OUT1 on Volume Board. */
+#define VOLUME_SELECT_BASS_LEFT_ADDR      0x42 /* OUT2 on Volume Board. */
+#define VOLUME_SELECT_MEDIUM_RIGHT_ADDR   0x44 /* OUT3 on Volume Board. */
+#define VOLUME_SELECT_MEDIUM_LEFT_ADDR    0x46 /* OUT4 on Volume Board. */
+#define VOLUME_SELECT_TWEETER_RIGHT_ADDR  0x48 /* OUT5 on Volume Board. */
+#define VOLUME_SELECT_TWEETER_LEFT_ADDR   0x4A /* OUT6 on Volume Board. */
 
 /*****************************************/
 
@@ -126,15 +123,10 @@ boolean mVolumeChanged     = false;
 #define MAX_VOLUME_BASS    127
 #define MID_VOLUME_BALANCE  63
 
-void setVolumeValue(int val) {
-  digitalWrite(VOLUME_BIT_0, ( val       & 1) ? HIGH : LOW );
-  digitalWrite(VOLUME_BIT_1, ((val >> 1) & 1) ? HIGH : LOW );
-  digitalWrite(VOLUME_BIT_2, ((val >> 2) & 1) ? HIGH : LOW );
-  digitalWrite(VOLUME_BIT_3, ((val >> 3) & 1) ? HIGH : LOW );
-  digitalWrite(VOLUME_BIT_4, ((val >> 4) & 1) ? HIGH : LOW );
-  digitalWrite(VOLUME_BIT_5, ((val >> 5) & 1) ? HIGH : LOW );
-  digitalWrite(VOLUME_BIT_6, ((val >> 6) & 1) ? HIGH : LOW );
-  digitalWrite(VOLUME_BIT_7, ((val >> 7) & 1) ? HIGH : LOW );
+void setVolumeValue(byte val, byte addr) {
+  Wire.beginTransmission(addr);
+  Wire.send(val);
+  Wire.endTransmission();
 }
 
 void changeSource(byte newVal) {
@@ -160,14 +152,14 @@ void isrPwrService() {
   else
     mPoweredDownUserForced = true;
   sei();
-#ifdef DEBUG
+#ifdef DEBUG1
   Serial.println("ISR PWR");
 #endif
 }
 
 // Volume Up and Down
 void VolumeUpMotor() {
-#ifdef DEBUG
+#ifdef DEBUG1
   Serial.println("Volume UP");
 #endif
   digitalWrite(VOLUME_UP_PIN, LOW);     // Volume ON
@@ -177,7 +169,7 @@ void VolumeUpMotor() {
   digitalWrite(VOLUME_DOWN_PIN, HIGH);  // Volume OFF  
 }
 void VolumeDownMotor() {
-#ifdef DEBUG
+#ifdef DEBUG1
   Serial.println("Volume DOWN");
 #endif
   digitalWrite(VOLUME_UP_PIN, HIGH);    // Volume OFF
@@ -189,7 +181,7 @@ void VolumeDownMotor() {
 
 void setup()
 {
-#ifdef DEBUG
+#ifdef DEBUG1
   Serial.begin(9600);
 #endif
 
@@ -221,47 +213,18 @@ void setup()
     digitalWrite(mSources[i], LED_OFF);  // LED off
   }
 
-  pinMode(VOLUME_SELECT_TWEETER_RIGHT, OUTPUT);
-  digitalWrite(VOLUME_SELECT_TWEETER_RIGHT, LOW);
-  pinMode(VOLUME_SELECT_TWEETER_LEFT, OUTPUT);
-  digitalWrite(VOLUME_SELECT_TWEETER_LEFT, LOW);
-  pinMode(VOLUME_SELECT_MEDIUM_RIGHT, OUTPUT);
-  digitalWrite(VOLUME_SELECT_MEDIUM_RIGHT, LOW);
-  pinMode(VOLUME_SELECT_MEDIUM_LEFT, OUTPUT);
-  digitalWrite(VOLUME_SELECT_MEDIUM_LEFT, LOW);
-  pinMode(VOLUME_SELECT_BASS_RIGHT, OUTPUT);
-  digitalWrite(VOLUME_SELECT_BASS_RIGHT, LOW);
-  pinMode(VOLUME_SELECT_BASS_LEFT, OUTPUT);
-  digitalWrite(VOLUME_SELECT_BASS_LEFT, LOW);
-
-  pinMode(VOLUME_BIT_7, OUTPUT);
-  digitalWrite(VOLUME_BIT_7, LOW);
-  pinMode(VOLUME_BIT_6, OUTPUT);
-  digitalWrite(VOLUME_BIT_6, LOW);
-  pinMode(VOLUME_BIT_5, OUTPUT);
-  digitalWrite(VOLUME_BIT_5, LOW);
-  pinMode(VOLUME_BIT_4, OUTPUT);
-  digitalWrite(VOLUME_BIT_4, LOW);
-  pinMode(VOLUME_BIT_3, OUTPUT);
-  digitalWrite(VOLUME_BIT_3, LOW);
-  pinMode(VOLUME_BIT_2, OUTPUT);
-  digitalWrite(VOLUME_BIT_2, LOW);
-  pinMode(VOLUME_BIT_1, OUTPUT);
-  digitalWrite(VOLUME_BIT_1, LOW);
-  pinMode(VOLUME_BIT_0, OUTPUT);
-  digitalWrite(VOLUME_BIT_0, LOW);
-
   // Restore source from EEPROM
   changeSource(EEPROM.read(EEPROM_SOURCE_ADDRESS));
   
   // Start the IR receiver
   irrecv.enableIRIn();
+
+  // Start I2C for Volume Mgmt
+  Wire.begin();
 }
 
 void loop() {
-#ifdef DEBUG2
-  unsigned int *irRawBuf;
-#endif
+
   long newKobPos;
 
   // ############## IRDA Mgmt ##############
@@ -279,7 +242,7 @@ void loop() {
       // Check values comming from Remote control
       // Is Menu ? => Used to handle Power ON / OFF
       if(results.value == ON_OFF) {
-#ifdef DEBUG
+#ifdef DEBUG1
         Serial.println("ON_OFF");
 #endif
         changePowerUp(!mPowerUp);
@@ -294,42 +257,42 @@ void loop() {
       if (mPowerUp) {
         // Is Volume Up ?
         if(results.value == VOLUME_PLUS) {
-#ifdef DEBUG
+#ifdef DEBUG1
           Serial.println("Volume Up");
 #endif
           VolumeUpMotor();
         }
         // Is Volume Down ?
         if(results.value == VOLUME_MINUS) {
-#ifdef DEBUG
+#ifdef DEBUG1
           Serial.println("Volume Down");
 #endif
           VolumeDownMotor();
         }
         // Is Source plus ?
         if(results.value == SOURCE_PLUS) {
-#ifdef DEBUG
+#ifdef DEBUG1
           Serial.println("Source Plus");
 #endif
           changeSource(mSource+1);
         }
         // Is Source minus ?
         if(results.value == SOURCE_MINUS) {
-#ifdef DEBUG
+#ifdef DEBUG1
           Serial.println("Source Minus");
 #endif
           changeSource(mSource-1);
         }
         // Is Mute ?
         if(results.value == MUTE) {
-#ifdef DEBUG
+#ifdef DEBUG1
           Serial.println("Mute");
 #endif
         }
         // Is Repeate ?
         // In that case only handle Volume UP and Down.
         if(results.value == REPEATE) {
-#ifdef DEBUG
+#ifdef DEBUG1
           Serial.println("Repeate");
 #endif
           if(mPreviousIR == VOLUME_PLUS) {
@@ -411,13 +374,13 @@ void loop() {
     // ############## Source Mgmt ##############
     if (mSourceChanged) {
       mSourceChanged = 0;
-#ifdef DEBUG
+#ifdef DEBUG1
       Serial.print("mSource = ");
       Serial.print(mSource);
       Serial.println();
 #endif
       for (int i=0 ; i<NB_SOURCES ; i++) {
-        if (i=mSource) digitalWrite(mSources[i], LED_ON);   // LED on
+        if (i==mSource) digitalWrite(mSources[i], LED_ON);   // LED on
         else digitalWrite(mSources[i], LED_OFF);   // LED off
       }
     }
@@ -441,17 +404,17 @@ void loop() {
       mVolumeChanged = true;
     }
     mVolumeTweeter = analogRead(VOLUME_SENSE_TWEETER) >> 2;
-    if (mPreviousVolumeTweeter =! mVolumeTweeter) {
+    if (mPreviousVolumeTweeter != mVolumeTweeter) {
       mPreviousVolumeTweeter = mVolumeTweeter;
       mVolumeChanged = true;
     }
     mVolumeMedium = analogRead(VOLUME_SENSE_MEDIUM) >> 2;
-    if (mPreviousVolumeMedium =! mVolumeMedium) {
+    if (mPreviousVolumeMedium != mVolumeMedium) {
       mPreviousVolumeMedium = mVolumeMedium;
       mVolumeChanged = true;
     }
     mVolumeBass = analogRead(VOLUME_SENSE_BASS) >> 2;
-    if (mPreviousVolumeBass =! mVolumeBass) {
+    if (mPreviousVolumeBass != mVolumeBass) {
       mPreviousVolumeBass = mVolumeBass;
       mVolumeChanged = true;
     }
@@ -459,46 +422,28 @@ void loop() {
     /* Compute and set Volumes Values */
     if (mVolumeChanged) {
       mVolumeChanged = false;
-      /* Compute right tweeter */
-      int rightTweeter = mVolumeGeneral - (MAX_VOLUME_TWEETER - mVolumeTweeter) - (MID_VOLUME_BALANCE - mBalance);
-      /* Compute left tweeter */
-      int leftTweeter = mVolumeGeneral - (MAX_VOLUME_TWEETER - mVolumeTweeter) - (mBalance - MID_VOLUME_BALANCE);
-      /* Compute right medium */
-      int rightMedium = mVolumeGeneral - (MAX_VOLUME_MEDIUM - mVolumeMedium) - (MID_VOLUME_BALANCE - mBalance);
-      /* Compute left medium */
-      int leftMedium = mVolumeGeneral - (MAX_VOLUME_MEDIUM - mVolumeMedium) - (mBalance - MID_VOLUME_BALANCE);
       /* Compute right bass */
-      int rightBass = mVolumeGeneral - (MAX_VOLUME_BASS - mVolumeBass) - (MID_VOLUME_BALANCE - mBalance);
+      byte rightBass    = (byte) (mVolumeGeneral - (MAX_VOLUME_BASS    - mVolumeBass)    - (MID_VOLUME_BALANCE - mBalance));
       /* Compute left bass */
-      int leftBass = mVolumeGeneral - (MAX_VOLUME_BASS - mVolumeBass) - (mBalance - MID_VOLUME_BALANCE);
+      byte leftBass     = (byte) (mVolumeGeneral - (MAX_VOLUME_BASS    - mVolumeBass)    - (mBalance - MID_VOLUME_BALANCE));
+      /* Compute right medium */
+      byte rightMedium  = (byte) (mVolumeGeneral - (MAX_VOLUME_MEDIUM  - mVolumeMedium)  - (MID_VOLUME_BALANCE - mBalance));
+      /* Compute left medium */
+      byte leftMedium   = (byte) (mVolumeGeneral - (MAX_VOLUME_MEDIUM  - mVolumeMedium)  - (mBalance - MID_VOLUME_BALANCE));
+      /* Compute right tweeter */
+      byte rightTweeter = (byte) (mVolumeGeneral - (MAX_VOLUME_TWEETER - mVolumeTweeter) - (MID_VOLUME_BALANCE - mBalance));
+      /* Compute left tweeter */
+      byte leftTweeter  = (byte) (mVolumeGeneral - (MAX_VOLUME_TWEETER - mVolumeTweeter) - (mBalance - MID_VOLUME_BALANCE));
+
       /* TODO: Handle when one of the volume is bigger than 127 due to balance !! */
       
       /* Set Volumes values */
-      setVolumeValue(rightTweeter);
-      digitalWrite(VOLUME_SELECT_TWEETER_RIGHT, HIGH);
-      delay(1);
-      digitalWrite(VOLUME_SELECT_TWEETER_RIGHT, LOW);
-      setVolumeValue(leftTweeter);
-      digitalWrite(VOLUME_SELECT_TWEETER_LEFT, HIGH);
-      delay(1);
-      digitalWrite(VOLUME_SELECT_TWEETER_LEFT, LOW);
-      setVolumeValue(rightMedium);
-      digitalWrite(VOLUME_SELECT_MEDIUM_RIGHT, HIGH);
-      delay(1);
-      digitalWrite(VOLUME_SELECT_MEDIUM_RIGHT, LOW);
-      setVolumeValue(leftMedium);
-      digitalWrite(VOLUME_SELECT_MEDIUM_LEFT, HIGH);
-      delay(1);
-      digitalWrite(VOLUME_SELECT_MEDIUM_LEFT, LOW);
-      setVolumeValue(rightBass);
-      digitalWrite(VOLUME_SELECT_BASS_RIGHT, HIGH);
-      delay(1);
-      digitalWrite(VOLUME_SELECT_BASS_RIGHT, LOW);
-      setVolumeValue(leftBass);
-      digitalWrite(VOLUME_SELECT_BASS_LEFT, HIGH);
-      delay(1);
-      digitalWrite(VOLUME_SELECT_BASS_LEFT, LOW);
-      setVolumeValue(0);
+      setVolumeValue(rightBass,    VOLUME_SELECT_BASS_RIGHT_ADDR   );
+      setVolumeValue(leftBass,     VOLUME_SELECT_BASS_LEFT_ADDR    );
+      setVolumeValue(rightMedium,  VOLUME_SELECT_MEDIUM_RIGHT_ADDR );
+      setVolumeValue(leftMedium,   VOLUME_SELECT_MEDIUM_LEFT_ADDR  );
+      setVolumeValue(rightTweeter, VOLUME_SELECT_TWEETER_RIGHT_ADDR);
+      setVolumeValue(leftTweeter,  VOLUME_SELECT_TWEETER_LEFT_ADDR );
     }
 
   }// if (mPowerUp)
@@ -522,7 +467,7 @@ void loop() {
       mPowerUpChanged = 0;
       sei();
 
-#ifdef DEBUG
+#ifdef DEBUG1
       Serial.println("Power Down");
 #endif
 
