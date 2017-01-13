@@ -79,7 +79,6 @@ volatile boolean mTrigger = false;
 volatile boolean mTriggerChanged = false;
 
 boolean mMute = false;
-boolean mMuteChanged = false;
 
 unsigned long mPreviousIR = 0;
 
@@ -116,17 +115,72 @@ int mVolumeMedium          = 0;
 int mPreviousVolumeMedium  = 0;
 int mVolumeBass            = 0;
 int mPreviousVolumeBass    = 0;
+byte mRightBass            = 0;
+byte mLeftBass             = 0;
+byte mRightMedium          = 0;
+byte mLeftMedium           = 0;
+byte mRightTweeter         = 0;
+byte mLeftTweeter          = 0;
 boolean mVolumeChanged     = false;
-/* Nexts values need to be calibrated according to max value of each potentiometer */
+/* TODO: Nexts values need to be calibrated according to max value of each potentiometer */
 #define MAX_VOLUME_TWEETER 127
 #define MAX_VOLUME_MEDIUM  127
 #define MAX_VOLUME_BASS    127
 #define MID_VOLUME_BALANCE  63
 
 void setVolumeValue(byte val, byte addr) {
+#ifdef DEBUG1
+  Serial.print("setVolumeValue val = ");
+  Serial.println(val);
+  Serial.print("setVolumeValue addr = ");
+  Serial.println(addr);
+#endif
   Wire.beginTransmission(addr);
   Wire.send(val);
   Wire.endTransmission();
+}
+
+// Volume Up and Down
+void VolumeUpMotor() {
+#ifdef DEBUG1
+  Serial.println("Volume UP");
+#endif
+  digitalWrite(VOLUME_UP_PIN, LOW);     // Volume ON
+  digitalWrite(VOLUME_DOWN_PIN, HIGH);  // Volume OFF
+  delay(VOLUME_TIME);
+  digitalWrite(VOLUME_UP_PIN, HIGH);    // Volume OFF
+  digitalWrite(VOLUME_DOWN_PIN, HIGH);  // Volume OFF
+}
+void VolumeDownMotor() {
+#ifdef DEBUG1
+  Serial.println("Volume DOWN");
+#endif
+  digitalWrite(VOLUME_UP_PIN, HIGH);    // Volume OFF
+  digitalWrite(VOLUME_DOWN_PIN, LOW);   // Volume ON
+  delay(VOLUME_TIME);
+  digitalWrite(VOLUME_UP_PIN, HIGH);    // Volume OFF
+  digitalWrite(VOLUME_DOWN_PIN, HIGH);  // Volume OFF
+}
+
+void mute(){
+  if (mMute) {
+    setVolumeValue(mRightBass,    VOLUME_SELECT_BASS_RIGHT_ADDR   );
+    setVolumeValue(mLeftBass,     VOLUME_SELECT_BASS_LEFT_ADDR    );
+    setVolumeValue(mRightMedium,  VOLUME_SELECT_MEDIUM_RIGHT_ADDR );
+    setVolumeValue(mLeftMedium,   VOLUME_SELECT_MEDIUM_LEFT_ADDR  );
+    setVolumeValue(mRightTweeter, VOLUME_SELECT_TWEETER_RIGHT_ADDR);
+    setVolumeValue(mLeftTweeter,  VOLUME_SELECT_TWEETER_LEFT_ADDR );
+  }
+  else {
+    /* Add 128 since bit 7 is used for Mute. */
+    setVolumeValue(mRightBass + 128,    VOLUME_SELECT_BASS_RIGHT_ADDR   );
+    setVolumeValue(mLeftBass + 128,     VOLUME_SELECT_BASS_LEFT_ADDR    );
+    setVolumeValue(mRightMedium + 128,  VOLUME_SELECT_MEDIUM_RIGHT_ADDR );
+    setVolumeValue(mLeftMedium + 128,   VOLUME_SELECT_MEDIUM_LEFT_ADDR  );
+    setVolumeValue(mRightTweeter + 128, VOLUME_SELECT_TWEETER_RIGHT_ADDR);
+    setVolumeValue(mLeftTweeter + 128,  VOLUME_SELECT_TWEETER_LEFT_ADDR );
+  }
+  mMute = !mMute;
 }
 
 void changeSource(byte newVal) {
@@ -157,27 +211,10 @@ void isrPwrService() {
 #endif
 }
 
-// Volume Up and Down
-void VolumeUpMotor() {
-#ifdef DEBUG1
-  Serial.println("Volume UP");
-#endif
-  digitalWrite(VOLUME_UP_PIN, LOW);     // Volume ON
-  digitalWrite(VOLUME_DOWN_PIN, HIGH);  // Volume OFF
-  delay(VOLUME_TIME);
-  digitalWrite(VOLUME_UP_PIN, HIGH);    // Volume OFF
-  digitalWrite(VOLUME_DOWN_PIN, HIGH);  // Volume OFF  
-}
-void VolumeDownMotor() {
-#ifdef DEBUG1
-  Serial.println("Volume DOWN");
-#endif
-  digitalWrite(VOLUME_UP_PIN, HIGH);    // Volume OFF
-  digitalWrite(VOLUME_DOWN_PIN, LOW);   // Volume ON
-  delay(VOLUME_TIME);
-  digitalWrite(VOLUME_UP_PIN, HIGH);    // Volume OFF
-  digitalWrite(VOLUME_DOWN_PIN, HIGH);  // Volume OFF  
-}
+
+/*
+ * INIT
+ */
 
 void setup()
 {
@@ -288,6 +325,7 @@ void loop() {
 #ifdef DEBUG1
           Serial.println("Mute");
 #endif
+          mute();
         }
         // Is Repeate ?
         // In that case only handle Volume UP and Down.
@@ -423,27 +461,28 @@ void loop() {
     if (mVolumeChanged) {
       mVolumeChanged = false;
       /* Compute right bass */
-      byte rightBass    = (byte) (mVolumeGeneral - (MAX_VOLUME_BASS    - mVolumeBass)    - (MID_VOLUME_BALANCE - mBalance));
+      mRightBass    = (byte) (mVolumeGeneral - (MAX_VOLUME_BASS    - mVolumeBass)    - (MID_VOLUME_BALANCE - mBalance));
       /* Compute left bass */
-      byte leftBass     = (byte) (mVolumeGeneral - (MAX_VOLUME_BASS    - mVolumeBass)    - (mBalance - MID_VOLUME_BALANCE));
+      mLeftBass     = (byte) (mVolumeGeneral - (MAX_VOLUME_BASS    - mVolumeBass)    - (mBalance - MID_VOLUME_BALANCE));
       /* Compute right medium */
-      byte rightMedium  = (byte) (mVolumeGeneral - (MAX_VOLUME_MEDIUM  - mVolumeMedium)  - (MID_VOLUME_BALANCE - mBalance));
+      mRightMedium  = (byte) (mVolumeGeneral - (MAX_VOLUME_MEDIUM  - mVolumeMedium)  - (MID_VOLUME_BALANCE - mBalance));
       /* Compute left medium */
-      byte leftMedium   = (byte) (mVolumeGeneral - (MAX_VOLUME_MEDIUM  - mVolumeMedium)  - (mBalance - MID_VOLUME_BALANCE));
+      mLeftMedium   = (byte) (mVolumeGeneral - (MAX_VOLUME_MEDIUM  - mVolumeMedium)  - (mBalance - MID_VOLUME_BALANCE));
       /* Compute right tweeter */
-      byte rightTweeter = (byte) (mVolumeGeneral - (MAX_VOLUME_TWEETER - mVolumeTweeter) - (MID_VOLUME_BALANCE - mBalance));
+      mRightTweeter = (byte) (mVolumeGeneral - (MAX_VOLUME_TWEETER - mVolumeTweeter) - (MID_VOLUME_BALANCE - mBalance));
       /* Compute left tweeter */
-      byte leftTweeter  = (byte) (mVolumeGeneral - (MAX_VOLUME_TWEETER - mVolumeTweeter) - (mBalance - MID_VOLUME_BALANCE));
+      mLeftTweeter  = (byte) (mVolumeGeneral - (MAX_VOLUME_TWEETER - mVolumeTweeter) - (mBalance - MID_VOLUME_BALANCE));
 
       /* TODO: Handle when one of the volume is bigger than 127 due to balance !! */
-      
+
       /* Set Volumes values */
-      setVolumeValue(rightBass,    VOLUME_SELECT_BASS_RIGHT_ADDR   );
-      setVolumeValue(leftBass,     VOLUME_SELECT_BASS_LEFT_ADDR    );
-      setVolumeValue(rightMedium,  VOLUME_SELECT_MEDIUM_RIGHT_ADDR );
-      setVolumeValue(leftMedium,   VOLUME_SELECT_MEDIUM_LEFT_ADDR  );
-      setVolumeValue(rightTweeter, VOLUME_SELECT_TWEETER_RIGHT_ADDR);
-      setVolumeValue(leftTweeter,  VOLUME_SELECT_TWEETER_LEFT_ADDR );
+      /* Add 128 since bit 7 is used for Mute. */
+      setVolumeValue(((mRightBass    ==0) ? 0 : mRightBass    + 128), VOLUME_SELECT_BASS_RIGHT_ADDR   );
+      setVolumeValue(((mLeftBass     ==0) ? 0 : mLeftBass     + 128), VOLUME_SELECT_BASS_LEFT_ADDR    );
+      setVolumeValue(((mRightMedium  ==0) ? 0 : mRightMedium  + 128), VOLUME_SELECT_MEDIUM_RIGHT_ADDR );
+      setVolumeValue(((mLeftMedium   ==0) ? 0 : mLeftMedium   + 128), VOLUME_SELECT_MEDIUM_LEFT_ADDR  );
+      setVolumeValue(((mRightTweeter ==0) ? 0 : mRightTweeter + 128), VOLUME_SELECT_TWEETER_RIGHT_ADDR);
+      setVolumeValue(((mLeftTweeter  ==0) ? 0 : mLeftTweeter  + 128), VOLUME_SELECT_TWEETER_LEFT_ADDR );
     }
 
   }// if (mPowerUp)
