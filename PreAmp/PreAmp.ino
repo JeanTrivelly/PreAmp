@@ -45,12 +45,13 @@
 #define VOLUME_SENSE_MEDIUM          A6 /* PIN 44 */
 #define VOLUME_SENSE_BASS            A7 /* PIN 45 */
 
-#define VOLUME_SELECT_BASS_RIGHT_ADDR     0x40 /* OUT1 on Volume Board. */
-#define VOLUME_SELECT_BASS_LEFT_ADDR      0x42 /* OUT2 on Volume Board. */
-#define VOLUME_SELECT_MEDIUM_RIGHT_ADDR   0x44 /* OUT3 on Volume Board. */
-#define VOLUME_SELECT_MEDIUM_LEFT_ADDR    0x46 /* OUT4 on Volume Board. */
-#define VOLUME_SELECT_TWEETER_RIGHT_ADDR  0x48 /* OUT5 on Volume Board. */
-#define VOLUME_SELECT_TWEETER_LEFT_ADDR   0x4A /* OUT6 on Volume Board. */
+/* Addresses of PCF8574A I/O expanders */
+#define VOLUME_SELECT_BASS_RIGHT_ADDR     0x70 /* OUT1 on Volume Board. */
+#define VOLUME_SELECT_BASS_LEFT_ADDR      0x72 /* OUT2 on Volume Board. */
+#define VOLUME_SELECT_MEDIUM_RIGHT_ADDR   0x74 /* OUT3 on Volume Board. */
+#define VOLUME_SELECT_MEDIUM_LEFT_ADDR    0x76 /* OUT4 on Volume Board. */
+#define VOLUME_SELECT_TWEETER_RIGHT_ADDR  0x78 /* OUT5 on Volume Board. */
+#define VOLUME_SELECT_TWEETER_LEFT_ADDR   0x7A /* OUT6 on Volume Board. */
 
 /*****************************************/
 
