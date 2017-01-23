@@ -131,10 +131,10 @@ boolean mVolumeChanged     = false;
 
 void setVolumeValue(byte val, byte addr) {
 #ifdef DEBUG1
-  Serial.print("setVolumeValue val = ");
-  Serial.println(val);
   Serial.print("setVolumeValue addr = ");
   Serial.println(addr);
+  Serial.print("setVolumeValue val = ");
+  Serial.println(val);
 #endif
   Wire.beginTransmission(addr);
   Wire.send(val);
@@ -227,7 +227,7 @@ void setup()
   mPowerUp = 0;
   /* Connect to ON / OFF button. */
   pinMode(ON_OFF_BUTTON_PIN, INPUT);
-  attachInterrupt(ON_OFF_BUTTON_PIN, isrPwrService, RISING);
+//  attachInterrupt(ON_OFF_BUTTON_PIN, isrPwrService, RISING);
   
   pinMode(ON_LED_PIN, OUTPUT);
   pinMode(OFF_LED_PIN, OUTPUT);
@@ -365,6 +365,14 @@ void loop() {
     irrecv.resume(); // Receive the next value
   }
 
+  if (digitalRead(ON_OFF_BUTTON_PIN)) {
+    isrPwrService();
+#ifdef DEBUG1
+    Serial.println("power button pushed");
+#endif
+    delay(500);
+  }
+
   // ############## ON / OFF Button Mgmt  ##############
   if (mPowerUp) {
     if (mPowerUpChanged) {
@@ -376,6 +384,9 @@ void loop() {
       
       digitalWrite(ON_LED_PIN, LED_ON); // LED ON
       digitalWrite(OFF_LED_PIN, LED_OFF); // LED ON
+#ifdef DEBUG1
+      Serial.println("power up changed");
+#endif
     }
 
     if (digitalRead(ON_OFF_TRIGGER_PIN) == false && mPoweredThxTrigger == true) {
