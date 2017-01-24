@@ -106,22 +106,22 @@ volatile boolean mPoweredDownUserForced = false;
 // So each segment duration is 93.75ms => 94ms.
 #define VOLUME_TIME 94
 
-int mVolumeGeneral         = 0;
-int mPreviousVolumeGeneral = 0;
-int mBalance               = 0;
-int mPreviousBalance       = 0;
-int mVolumeTweeter         = 0;
-int mPreviousVolumeTweeter = 0;
-int mVolumeMedium          = 0;
-int mPreviousVolumeMedium  = 0;
-int mVolumeBass            = 0;
-int mPreviousVolumeBass    = 0;
-byte mRightBass            = 0;
-byte mLeftBass             = 0;
-byte mRightMedium          = 0;
-byte mLeftMedium           = 0;
-byte mRightTweeter         = 0;
-byte mLeftTweeter          = 0;
+unsigned int mVolumeGeneral         = 0;
+unsigned int mPreviousVolumeGeneral = 0;
+unsigned int mBalance               = 0;
+unsigned int mPreviousBalance       = 0;
+unsigned int mVolumeTweeter         = 0;
+unsigned int mPreviousVolumeTweeter = 0;
+unsigned int mVolumeMedium          = 0;
+unsigned int mPreviousVolumeMedium  = 0;
+unsigned int mVolumeBass            = 0;
+unsigned int mPreviousVolumeBass    = 0;
+unsigned char mRightBass            = 0;
+unsigned char mLeftBass             = 0;
+unsigned char mRightMedium          = 0;
+unsigned char mLeftMedium           = 0;
+unsigned char mRightTweeter         = 0;
+unsigned char mLeftTweeter          = 0;
 boolean mVolumeChanged     = false;
 /* TODO: Nexts values need to be calibrated according to max value of each potentiometer */
 #define MAX_VOLUME_TWEETER 127
@@ -129,7 +129,7 @@ boolean mVolumeChanged     = false;
 #define MAX_VOLUME_BASS    127
 #define MID_VOLUME_BALANCE  63
 
-void setVolumeValue(byte val, byte addr) {
+void setVolumeValue(unsigned char val, unsigned char addr) {
 #ifdef DEBUG1
   Serial.print("setVolumeValue addr = ");
   Serial.println(addr);
@@ -439,51 +439,71 @@ void loop() {
     /*
      * Volume is able to be managed between -63.5dB up to 0dB by 0.5dB steps.
      * Since analogRead provide a value between 0 and 1023,
-     * it is needed to divied it by 4 to have a value between 0 and 127.
+     * it is needed to divied it by 8 to have a value between 0 and 127.
      * Where 127 coresponds to 0dB and 0 to -63.5dB.
      */
-    mVolumeGeneral = analogRead(VOLUME_SENSE_GENERAL) >> 2;
+    mVolumeGeneral = analogRead(VOLUME_SENSE_GENERAL) >> 3;
     if (mPreviousVolumeGeneral != mVolumeGeneral) {
       mPreviousVolumeGeneral = mVolumeGeneral;
       mVolumeChanged = true;
+#ifdef DEBUG1
+      Serial.print("mVolumeGeneral = ");
+      Serial.println(mVolumeGeneral);
+#endif
     }
     /* Regarding Balance, midle corresponds to 63, full left corresponds to 0 and full right to 127 */
-    mBalance = analogRead(VOLUME_SENSE_BALANCE) >> 2;
+    mBalance = analogRead(VOLUME_SENSE_BALANCE) >> 3;
     if (mPreviousBalance != mBalance) {
       mPreviousBalance = mBalance;
       mVolumeChanged = true;
+#ifdef DEBUG1
+      Serial.print("mBalance = ");
+      Serial.println(mBalance);
+#endif
     }
-    mVolumeTweeter = analogRead(VOLUME_SENSE_TWEETER) >> 2;
+    mVolumeTweeter = analogRead(VOLUME_SENSE_TWEETER) >> 3;
     if (mPreviousVolumeTweeter != mVolumeTweeter) {
       mPreviousVolumeTweeter = mVolumeTweeter;
       mVolumeChanged = true;
+#ifdef DEBUG1
+      Serial.print("mVolumeTweeter = ");
+      Serial.println(mVolumeTweeter);
+#endif
     }
-    mVolumeMedium = analogRead(VOLUME_SENSE_MEDIUM) >> 2;
+    mVolumeMedium = analogRead(VOLUME_SENSE_MEDIUM) >> 3;
     if (mPreviousVolumeMedium != mVolumeMedium) {
       mPreviousVolumeMedium = mVolumeMedium;
       mVolumeChanged = true;
+#ifdef DEBUG1
+      Serial.print("mVolumeMedium = ");
+      Serial.println(mVolumeMedium);
+#endif
     }
-    mVolumeBass = analogRead(VOLUME_SENSE_BASS) >> 2;
+    mVolumeBass = analogRead(VOLUME_SENSE_BASS) >> 3;
     if (mPreviousVolumeBass != mVolumeBass) {
       mPreviousVolumeBass = mVolumeBass;
       mVolumeChanged = true;
+#ifdef DEBUG1
+      Serial.print("mVolumeBass = ");
+      Serial.println(mVolumeBass);
+#endif
     }
 
     /* Compute and set Volumes Values */
     if (mVolumeChanged) {
       mVolumeChanged = false;
       /* Compute right bass */
-      mRightBass    = (byte) (mVolumeGeneral - (MAX_VOLUME_BASS    - mVolumeBass)    - (MID_VOLUME_BALANCE - mBalance));
+      mRightBass    = (unsigned char) (mVolumeGeneral - (MAX_VOLUME_BASS    - mVolumeBass)    - (MID_VOLUME_BALANCE - mBalance));
       /* Compute left bass */
-      mLeftBass     = (byte) (mVolumeGeneral - (MAX_VOLUME_BASS    - mVolumeBass)    - (mBalance - MID_VOLUME_BALANCE));
+      mLeftBass     = (unsigned char) (mVolumeGeneral - (MAX_VOLUME_BASS    - mVolumeBass)    - (mBalance - MID_VOLUME_BALANCE));
       /* Compute right medium */
-      mRightMedium  = (byte) (mVolumeGeneral - (MAX_VOLUME_MEDIUM  - mVolumeMedium)  - (MID_VOLUME_BALANCE - mBalance));
+      mRightMedium  = (unsigned char) (mVolumeGeneral - (MAX_VOLUME_MEDIUM  - mVolumeMedium)  - (MID_VOLUME_BALANCE - mBalance));
       /* Compute left medium */
-      mLeftMedium   = (byte) (mVolumeGeneral - (MAX_VOLUME_MEDIUM  - mVolumeMedium)  - (mBalance - MID_VOLUME_BALANCE));
+      mLeftMedium   = (unsigned char) (mVolumeGeneral - (MAX_VOLUME_MEDIUM  - mVolumeMedium)  - (mBalance - MID_VOLUME_BALANCE));
       /* Compute right tweeter */
-      mRightTweeter = (byte) (mVolumeGeneral - (MAX_VOLUME_TWEETER - mVolumeTweeter) - (MID_VOLUME_BALANCE - mBalance));
+      mRightTweeter = (unsigned char) (mVolumeGeneral - (MAX_VOLUME_TWEETER - mVolumeTweeter) - (MID_VOLUME_BALANCE - mBalance));
       /* Compute left tweeter */
-      mLeftTweeter  = (byte) (mVolumeGeneral - (MAX_VOLUME_TWEETER - mVolumeTweeter) - (mBalance - MID_VOLUME_BALANCE));
+      mLeftTweeter  = (unsigned char) (mVolumeGeneral - (MAX_VOLUME_TWEETER - mVolumeTweeter) - (mBalance - MID_VOLUME_BALANCE));
 
       /* TODO: Handle when one of the volume is bigger than 127 due to balance !! */
 
