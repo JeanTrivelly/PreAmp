@@ -39,11 +39,11 @@
 #define VOLUME_I2C_SDA                1
 #define VOLUME_UP_PIN                39 /* VOLUME MOTOR UP */
 #define VOLUME_DOWN_PIN              40 /* VOLUME MOTOR DOWN */
-#define VOLUME_SENSE_GENERAL         A3 /* PIN 41 */
-#define VOLUME_SENSE_BALANCE         A4 /* PIN 42 */
-#define VOLUME_SENSE_TWEETER         A5 /* PIN 43 */
-#define VOLUME_SENSE_MEDIUM          A6 /* PIN 44 */
-#define VOLUME_SENSE_BASS            A7 /* PIN 45 */
+#define VOLUME_SENSE_GENERAL          3 /* PIN A3 / 41 */
+#define VOLUME_SENSE_BALANCE          4 /* PIN A4 / 42 */
+#define VOLUME_SENSE_TWEETER          5 /* PIN A5 / 43 */
+#define VOLUME_SENSE_MEDIUM           6 /* PIN A6 / 44 */
+#define VOLUME_SENSE_BASS             7 /* PIN A7 / 45 */
 
 /* Addresses of PCF8574A I/O expanders */
 #define VOLUME_SELECT_BASS_RIGHT_ADDR     0x70 /* OUT1 on Volume Board. */
