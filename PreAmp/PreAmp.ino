@@ -251,6 +251,9 @@ void setup()
     digitalWrite(mSources[i], LED_OFF);  // LED off
   }
 
+  // Set Analog reference to EXTERNAL
+  analogReference(EXTERNAL);
+
   // Restore source from EEPROM
   changeSource(EEPROM.read(EEPROM_SOURCE_ADDRESS));
   
