@@ -7,6 +7,7 @@
 
 #define DEBUG1
 #define DEBUG2
+//#define DEBUG_IR
 
 #define APPLE_REMOTE // Use APPLE Remote control.
 
@@ -106,16 +107,21 @@ volatile boolean mPoweredDownUserForced = false;
 // So each segment duration is 93.75ms => 94ms.
 #define VOLUME_TIME 94
 
-unsigned int mVolumeGeneral         = 0;
-unsigned int mPreviousVolumeGeneral = 0;
-unsigned int mBalance               = 0;
-unsigned int mPreviousBalance       = 0;
-unsigned int mVolumeTweeter         = 0;
-unsigned int mPreviousVolumeTweeter = 0;
-unsigned int mVolumeMedium          = 0;
-unsigned int mPreviousVolumeMedium  = 0;
-unsigned int mVolumeBass            = 0;
-unsigned int mPreviousVolumeBass    = 0;
+unsigned int mVolumeGeneral             = 0;
+unsigned int mVolumeGeneralRead         = 0;
+unsigned int mPreviousVolumeGeneralRead = 0;
+unsigned int mBalance                   = 0;
+unsigned int mBalanceRead               = 0;
+unsigned int mPreviousBalanceRead       = 0;
+unsigned int mVolumeTweeter             = 0;
+unsigned int mVolumeTweeterRead         = 0;
+unsigned int mPreviousVolumeTweeterRead = 0;
+unsigned int mVolumeMedium              = 0;
+unsigned int mVolumeMediumRead          = 0;
+unsigned int mPreviousVolumeMediumRead  = 0;
+unsigned int mVolumeBass                = 0;
+unsigned int mVolumeBassRead            = 0;
+unsigned int mPreviousVolumeBassRead    = 0;
 unsigned char mRightBass            = 0;
 unsigned char mLeftBass             = 0;
 unsigned char mRightMedium          = 0;
@@ -271,7 +277,7 @@ void loop() {
   // ############## IRDA Mgmt ##############
   if (irrecv.decode(&results)) {
     if (results.decode_type == DECODE_TYPE) {
-#ifdef DEBUG2
+#ifdef DEBUG_IR
       Serial.print("irRawBuf: ");
       for (int i = 0; i < results.rawlen; i++) {
         Serial.print(results.rawbuf[i]);
@@ -351,7 +357,7 @@ void loop() {
       if (results.value != REPEATE) mPreviousIR = results.value;
     }
     else {
-#ifdef DEBUG2
+#ifdef DEBUG_IR
       Serial.print("results.decode_type = ");
       Serial.println(results.decode_type);
       Serial.print("results.value = ");
@@ -362,7 +368,7 @@ void loop() {
         Serial.print(results.rawbuf[i]);
         Serial.print(" ");
       }
-    Serial.println();
+      Serial.println();
 #endif
     }
     irrecv.resume(); // Receive the next value
@@ -438,6 +444,8 @@ void loop() {
       }
     }
 
+    /* Add a delay before using ADC... */
+    delay(100);
     // ############## Volume Mgmt ##############
     /*
      * Volume is able to be managed between -63.5dB up to 0dB by 0.5dB steps.
@@ -445,51 +453,143 @@ void loop() {
      * it is needed to divied it by 8 to have a value between 0 and 127.
      * Where 127 coresponds to 0dB and 0 to -63.5dB.
      */
-    mVolumeGeneral = analogRead(VOLUME_SENSE_GENERAL) >> 3;
-    if (mPreviousVolumeGeneral != mVolumeGeneral) {
-      mPreviousVolumeGeneral = mVolumeGeneral;
+    mVolumeGeneralRead = analogRead(VOLUME_SENSE_GENERAL);
+    unsigned int sup = ((mPreviousVolumeGeneralRead + 8) >= 1023) ? 1023 : (mPreviousVolumeGeneralRead + 8);
+    unsigned int inf = ((mPreviousVolumeGeneralRead - 8) <= 0)    ? 0    : (mPreviousVolumeGeneralRead - 8);
+    if (mVolumeGeneralRead <  8) {
+      mVolumeGeneral = 0;
+      if (mPreviousVolumeGeneralRead >= 8) {
+        mVolumeChanged = true;
+      }
+      mPreviousVolumeGeneralRead = mVolumeGeneralRead;
+    }
+    else if (((mVolumeGeneralRead >  sup)||
+              (mVolumeGeneralRead <= inf)  )) {
+      mVolumeGeneral = mVolumeGeneralRead >> 3;
       mVolumeChanged = true;
 #ifdef DEBUG1
       Serial.print("mVolumeGeneral = ");
       Serial.println(mVolumeGeneral);
+#ifdef DEBUG2
+      Serial.print("mVolumeGeneralRead = ");
+      Serial.println(mVolumeGeneralRead);
+      Serial.print("mPreviousVolumeGeneralRead = ");
+      Serial.println(mPreviousVolumeGeneralRead);
 #endif
+#endif
+      mPreviousVolumeGeneralRead = mVolumeGeneralRead;
     }
-    /* Regarding Balance, midle corresponds to 63, full left corresponds to 0 and full right to 127 */
-    mBalance = analogRead(VOLUME_SENSE_BALANCE) >> 3;
-    if (mPreviousBalance != mBalance) {
-      mPreviousBalance = mBalance;
+
+    /*
+     * Regarding Balance, midle corresponds to 63,
+     * full left corresponds to 0 and full right to 127
+     */
+    mBalanceRead = analogRead(VOLUME_SENSE_BALANCE);
+    sup = ((mPreviousBalanceRead + 8) >= 1023) ? 1023 : (mPreviousBalanceRead + 8);
+    inf = ((mPreviousBalanceRead - 8) <= 0)    ? 0    : (mPreviousBalanceRead - 8);
+    if (mBalanceRead <  8) {
+      mBalance = 0;
+      if (mPreviousBalanceRead >= 8) {
+        mVolumeChanged = true;
+      }
+      mPreviousBalanceRead = mBalanceRead;
+    }
+    else if (((mBalanceRead >  sup)||
+              (mBalanceRead <= inf)  )) {
+      mBalance = mBalanceRead >> 3;
       mVolumeChanged = true;
 #ifdef DEBUG1
       Serial.print("mBalance = ");
       Serial.println(mBalance);
+#ifdef DEBUG2
+      Serial.print("mBalanceRead = ");
+      Serial.println(mBalanceRead);
+      Serial.print("mPreviousBalanceRead = ");
+      Serial.println(mPreviousBalanceRead);
 #endif
+#endif
+      mPreviousBalanceRead = mBalanceRead;
     }
-    mVolumeTweeter = analogRead(VOLUME_SENSE_TWEETER) >> 3;
-    if (mPreviousVolumeTweeter != mVolumeTweeter) {
-      mPreviousVolumeTweeter = mVolumeTweeter;
+
+    mVolumeTweeterRead = analogRead(VOLUME_SENSE_TWEETER);
+    sup = ((mPreviousVolumeTweeterRead + 8) >= 1023) ? 1023 : (mPreviousVolumeTweeterRead + 8);
+    inf = ((mPreviousVolumeTweeterRead - 8) <= 0)    ? 0    : (mPreviousVolumeTweeterRead - 8);
+    if (mVolumeTweeterRead <  8) {
+      mVolumeTweeter = 0;
+      if (mPreviousVolumeTweeterRead >= 8) {
+        mVolumeChanged = true;
+      }
+      mPreviousVolumeTweeterRead = mVolumeTweeterRead;
+    }
+    else if (((mVolumeTweeterRead >  sup)||
+              (mVolumeTweeterRead <= inf)  )) {
+      mVolumeTweeter = mVolumeTweeterRead >> 3;
       mVolumeChanged = true;
 #ifdef DEBUG1
       Serial.print("mVolumeTweeter = ");
       Serial.println(mVolumeTweeter);
+#ifdef DEBUG2
+      Serial.print("mVolumeTweeterRead = ");
+      Serial.println(mVolumeTweeterRead);
+      Serial.print("mPreviousVolumeTweeterRead = ");
+      Serial.println(mPreviousVolumeTweeterRead);
 #endif
+#endif
+      mPreviousVolumeTweeterRead = mVolumeTweeterRead;
     }
-    mVolumeMedium = analogRead(VOLUME_SENSE_MEDIUM) >> 3;
-    if (mPreviousVolumeMedium != mVolumeMedium) {
-      mPreviousVolumeMedium = mVolumeMedium;
+
+    mVolumeMediumRead = analogRead(VOLUME_SENSE_MEDIUM);
+    sup = ((mPreviousVolumeMediumRead + 8) >= 1023) ? 1023 : (mPreviousVolumeMediumRead + 8);
+    inf = ((mPreviousVolumeMediumRead - 8) <= 0)    ? 0    : (mPreviousVolumeMediumRead - 8);
+    if (mVolumeMediumRead <  8) {
+      mVolumeMedium = 0;
+      if (mPreviousVolumeMediumRead >= 8) {
+        mVolumeChanged = true;
+      }
+      mPreviousVolumeMediumRead = mVolumeMediumRead;
+    }
+    else if (((mVolumeMediumRead >  sup)||
+              (mVolumeMediumRead <= inf)  )) {
+      mVolumeMedium = mVolumeMediumRead >> 3;
       mVolumeChanged = true;
 #ifdef DEBUG1
       Serial.print("mVolumeMedium = ");
       Serial.println(mVolumeMedium);
+#ifdef DEBUG2
+      Serial.print("mVolumeMediumRead = ");
+      Serial.println(mVolumeMediumRead);
+      Serial.print("mPreviousVolumeMediumRead = ");
+      Serial.println(mPreviousVolumeMediumRead);
 #endif
+#endif
+      mPreviousVolumeMediumRead = mVolumeMediumRead;
     }
-    mVolumeBass = analogRead(VOLUME_SENSE_BASS) >> 3;
-    if (mPreviousVolumeBass != mVolumeBass) {
-      mPreviousVolumeBass = mVolumeBass;
+
+    mVolumeBassRead = analogRead(VOLUME_SENSE_BASS);
+    sup = ((mPreviousVolumeBassRead + 8) >= 1023) ? 1023 : (mPreviousVolumeBassRead + 8);
+    inf = ((mPreviousVolumeBassRead - 8) <= 0)    ? 0    : (mPreviousVolumeBassRead - 8);
+    if (mVolumeBassRead <  8) {
+      mVolumeBass = 0;
+      if (mPreviousVolumeBassRead >= 8) {
+        mVolumeChanged = true;
+      }
+      mPreviousVolumeBassRead = mVolumeBassRead;
+    }
+    else if (((mVolumeBassRead >  sup)||
+              (mVolumeBassRead <= inf)  )) {
+      mVolumeBass = mVolumeBassRead >> 3;
       mVolumeChanged = true;
 #ifdef DEBUG1
       Serial.print("mVolumeBass = ");
       Serial.println(mVolumeBass);
+#ifdef DEBUG2
+      Serial.print("mVolumeBassRead = ");
+      Serial.println(mVolumeBassRead);
+      Serial.print("mPreviousVolumeBassRead = ");
+      Serial.println(mPreviousVolumeBassRead);
 #endif
+#endif
+      mPreviousVolumeBassRead = mVolumeBassRead;
     }
 
     /* Compute and set Volumes Values */
