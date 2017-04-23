@@ -46,13 +46,20 @@
 #define VOLUME_SENSE_MEDIUM           6 /* PIN A6 / 44 */
 #define VOLUME_SENSE_BASS             7 /* PIN A7 / 45 */
 
-/* Addresses of PCF8574A I/O expanders */
-#define VOLUME_SELECT_BASS_RIGHT_ADDR     0x70 /* OUT1 on Volume Board. */
-#define VOLUME_SELECT_BASS_LEFT_ADDR      0x72 /* OUT2 on Volume Board. */
-#define VOLUME_SELECT_MEDIUM_RIGHT_ADDR   0x74 /* OUT3 on Volume Board. */
-#define VOLUME_SELECT_MEDIUM_LEFT_ADDR    0x76 /* OUT4 on Volume Board. */
-#define VOLUME_SELECT_TWEETER_RIGHT_ADDR  0x78 /* OUT5 on Volume Board. */
-#define VOLUME_SELECT_TWEETER_LEFT_ADDR   0x7A /* OUT6 on Volume Board. */
+/*
+ * Addresses of PCF8574A I/O expanders.
+ * Wire lib used to comunicate with PFC8574A
+ * is automatically adding R/!W bit.
+ * So addresses have to be provided with only
+ * the 7 highest bits.
+ *
+ */
+#define VOLUME_SELECT_BASS_RIGHT_ADDR     0x38 /* OUT1 on Volume Board. */
+#define VOLUME_SELECT_BASS_LEFT_ADDR      0x39 /* OUT2 on Volume Board. */
+#define VOLUME_SELECT_MEDIUM_RIGHT_ADDR   0x3A /* OUT3 on Volume Board. */
+#define VOLUME_SELECT_MEDIUM_LEFT_ADDR    0x3B /* OUT4 on Volume Board. */
+#define VOLUME_SELECT_TWEETER_RIGHT_ADDR  0x3C /* OUT5 on Volume Board. */
+#define VOLUME_SELECT_TWEETER_LEFT_ADDR   0x3D /* OUT6 on Volume Board. */
 
 /*****************************************/
 
@@ -142,7 +149,7 @@ void setVolumeValue(unsigned char val, unsigned char addr) {
   Serial.print("setVolumeValue val = ");
   Serial.println(val);
 #endif
-  Wire.beginTransmission(addr);
+  Wire.beginTransmission(byte(addr));
   Wire.send(val);
   Wire.endTransmission();
 }
