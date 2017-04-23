@@ -389,6 +389,7 @@ void loop() {
     delay(500);
   }
 
+  bool volumeWriteRepeate = false;
   // ############## ON / OFF Button Mgmt  ##############
   if (mPowerUp) {
     if (mPowerUpChanged) {
@@ -403,6 +404,8 @@ void loop() {
 #ifdef DEBUG1
       Serial.println("power up changed");
 #endif
+      mVolumeChanged = true;
+      volumeWriteRepeate = true;
     }
 
     if (digitalRead(ON_OFF_TRIGGER_PIN) == false && mPoweredThxTrigger == true) {
@@ -625,6 +628,16 @@ void loop() {
       setVolumeValue(((mLeftMedium   ==0) ? 0 : mLeftMedium   + 128), VOLUME_SELECT_MEDIUM_LEFT_ADDR  );
       setVolumeValue(((mRightTweeter ==0) ? 0 : mRightTweeter + 128), VOLUME_SELECT_TWEETER_RIGHT_ADDR);
       setVolumeValue(((mLeftTweeter  ==0) ? 0 : mLeftTweeter  + 128), VOLUME_SELECT_TWEETER_LEFT_ADDR );
+    }
+    if (volumeWriteRepeate) {
+      delay(100);
+      setVolumeValue(((mRightBass    ==0) ? 0 : mRightBass    + 128), VOLUME_SELECT_BASS_RIGHT_ADDR   );
+      setVolumeValue(((mLeftBass     ==0) ? 0 : mLeftBass     + 128), VOLUME_SELECT_BASS_LEFT_ADDR    );
+      setVolumeValue(((mRightMedium  ==0) ? 0 : mRightMedium  + 128), VOLUME_SELECT_MEDIUM_RIGHT_ADDR );
+      setVolumeValue(((mLeftMedium   ==0) ? 0 : mLeftMedium   + 128), VOLUME_SELECT_MEDIUM_LEFT_ADDR  );
+      setVolumeValue(((mRightTweeter ==0) ? 0 : mRightTweeter + 128), VOLUME_SELECT_TWEETER_RIGHT_ADDR);
+      setVolumeValue(((mLeftTweeter  ==0) ? 0 : mLeftTweeter  + 128), VOLUME_SELECT_TWEETER_LEFT_ADDR );
+      volumeWriteRepeate = false;
     }
 
   }// if (mPowerUp)
