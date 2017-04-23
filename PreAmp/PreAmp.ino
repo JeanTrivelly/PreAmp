@@ -618,7 +618,13 @@ void loop() {
       /* Compute left tweeter */
       mLeftTweeter  = (unsigned char) (mVolumeGeneral - (MAX_VOLUME_TWEETER - mVolumeTweeter) - (mBalance - MID_VOLUME_BALANCE));
 
-      /* TODO: Handle when one of the volume is bigger than 127 due to balance !! */
+      /* Handle when one of the volume is bigger than 127 due to balance !! */
+      mRightBass    = (mRightBass    > 127) ? 127 : mRightBass;
+      mLeftBass     = (mLeftBass     > 127) ? 127 : mLeftBass;
+      mRightMedium  = (mRightMedium  > 127) ? 127 : mRightMedium;
+      mLeftMedium   = (mLeftMedium   > 127) ? 127 : mLeftMedium;
+      mRightTweeter = (mRightTweeter > 127) ? 127 : mRightTweeter;
+      mLeftTweeter  = (mLeftTweeter  > 127) ? 127 : mLeftTweeter;
 
       /* Set Volumes values */
       /* Add 128 since bit 7 is used for Mute. */
