@@ -197,6 +197,15 @@ void mute(){
   mMute = !mMute;
 }
 
+void hard_mute(){
+  setVolumeValue(0, VOLUME_SELECT_BASS_RIGHT_ADDR   );
+  setVolumeValue(0, VOLUME_SELECT_BASS_LEFT_ADDR    );
+  setVolumeValue(0, VOLUME_SELECT_MEDIUM_RIGHT_ADDR );
+  setVolumeValue(0, VOLUME_SELECT_MEDIUM_LEFT_ADDR  );
+  setVolumeValue(0, VOLUME_SELECT_TWEETER_RIGHT_ADDR);
+  setVolumeValue(0, VOLUME_SELECT_TWEETER_LEFT_ADDR );
+}
+
 void changeSource(byte newVal) {
   mSource = newVal;
   if (mSource < 0) mSource = NB_SOURCES;
@@ -454,8 +463,6 @@ void loop() {
       }
     }
 
-    /* Add a delay before using ADC... */
-    delay(100);
     // ############## Volume Mgmt ##############
     /*
      * Volume is able to be managed between -63.5dB up to 0dB by 0.5dB steps.
@@ -465,11 +472,21 @@ void loop() {
      */
     mVolumeGeneralRead = analogRead(VOLUME_SENSE_GENERAL);
     unsigned int sup = ((mPreviousVolumeGeneralRead + 8) >= 1023) ? 1023 : (mPreviousVolumeGeneralRead + 8);
-    unsigned int inf = ((mPreviousVolumeGeneralRead - 8) <= 0)    ? 0    : (mPreviousVolumeGeneralRead - 8);
+    unsigned int inf = ((mPreviousVolumeGeneralRead - 8) >  1023) ? 0    : (mPreviousVolumeGeneralRead - 8);
     if (mVolumeGeneralRead <  8) {
       mVolumeGeneral = 0;
       if (mPreviousVolumeGeneralRead >= 8) {
         mVolumeChanged = true;
+#ifdef DEBUG1
+      Serial.print("mVolumeGeneral = ");
+      Serial.println(mVolumeGeneral);
+#ifdef DEBUG2
+      Serial.print("mVolumeGeneralRead = ");
+      Serial.println(mVolumeGeneralRead);
+      Serial.print("mPreviousVolumeGeneralRead = ");
+      Serial.println(mPreviousVolumeGeneralRead);
+#endif
+#endif
       }
       mPreviousVolumeGeneralRead = mVolumeGeneralRead;
     }
@@ -485,6 +502,10 @@ void loop() {
       Serial.println(mVolumeGeneralRead);
       Serial.print("mPreviousVolumeGeneralRead = ");
       Serial.println(mPreviousVolumeGeneralRead);
+      Serial.print("sup = ");
+      Serial.println(sup);
+      Serial.print("inf = ");
+      Serial.println(inf);
 #endif
 #endif
       mPreviousVolumeGeneralRead = mVolumeGeneralRead;
@@ -496,11 +517,21 @@ void loop() {
      */
     mBalanceRead = analogRead(VOLUME_SENSE_BALANCE);
     sup = ((mPreviousBalanceRead + 8) >= 1023) ? 1023 : (mPreviousBalanceRead + 8);
-    inf = ((mPreviousBalanceRead - 8) <= 0)    ? 0    : (mPreviousBalanceRead - 8);
+    inf = ((mPreviousBalanceRead - 8) >  1023) ? 0    : (mPreviousBalanceRead - 8);
     if (mBalanceRead <  8) {
       mBalance = 0;
       if (mPreviousBalanceRead >= 8) {
         mVolumeChanged = true;
+#ifdef DEBUG1
+      Serial.print("mBalance = ");
+      Serial.println(mBalance);
+#ifdef DEBUG2
+      Serial.print("mBalanceRead = ");
+      Serial.println(mBalanceRead);
+      Serial.print("mPreviousBalanceRead = ");
+      Serial.println(mPreviousBalanceRead);
+#endif
+#endif
       }
       mPreviousBalanceRead = mBalanceRead;
     }
@@ -523,11 +554,21 @@ void loop() {
 
     mVolumeTweeterRead = analogRead(VOLUME_SENSE_TWEETER);
     sup = ((mPreviousVolumeTweeterRead + 8) >= 1023) ? 1023 : (mPreviousVolumeTweeterRead + 8);
-    inf = ((mPreviousVolumeTweeterRead - 8) <= 0)    ? 0    : (mPreviousVolumeTweeterRead - 8);
+    inf = ((mPreviousVolumeTweeterRead - 8) >  1023) ? 0    : (mPreviousVolumeTweeterRead - 8);
     if (mVolumeTweeterRead <  8) {
       mVolumeTweeter = 0;
       if (mPreviousVolumeTweeterRead >= 8) {
         mVolumeChanged = true;
+#ifdef DEBUG1
+      Serial.print("mVolumeTweeter = ");
+      Serial.println(mVolumeTweeter);
+#ifdef DEBUG2
+      Serial.print("mVolumeTweeterRead = ");
+      Serial.println(mVolumeTweeterRead);
+      Serial.print("mPreviousVolumeTweeterRead = ");
+      Serial.println(mPreviousVolumeTweeterRead);
+#endif
+#endif
       }
       mPreviousVolumeTweeterRead = mVolumeTweeterRead;
     }
@@ -550,11 +591,21 @@ void loop() {
 
     mVolumeMediumRead = analogRead(VOLUME_SENSE_MEDIUM);
     sup = ((mPreviousVolumeMediumRead + 8) >= 1023) ? 1023 : (mPreviousVolumeMediumRead + 8);
-    inf = ((mPreviousVolumeMediumRead - 8) <= 0)    ? 0    : (mPreviousVolumeMediumRead - 8);
+    inf = ((mPreviousVolumeMediumRead - 8) >  1023) ? 0    : (mPreviousVolumeMediumRead - 8);
     if (mVolumeMediumRead <  8) {
       mVolumeMedium = 0;
       if (mPreviousVolumeMediumRead >= 8) {
         mVolumeChanged = true;
+#ifdef DEBUG1
+      Serial.print("mVolumeMedium = ");
+      Serial.println(mVolumeMedium);
+#ifdef DEBUG2
+      Serial.print("mVolumeMediumRead = ");
+      Serial.println(mVolumeMediumRead);
+      Serial.print("mPreviousVolumeMediumRead = ");
+      Serial.println(mPreviousVolumeMediumRead);
+#endif
+#endif
       }
       mPreviousVolumeMediumRead = mVolumeMediumRead;
     }
@@ -577,11 +628,21 @@ void loop() {
 
     mVolumeBassRead = analogRead(VOLUME_SENSE_BASS);
     sup = ((mPreviousVolumeBassRead + 8) >= 1023) ? 1023 : (mPreviousVolumeBassRead + 8);
-    inf = ((mPreviousVolumeBassRead - 8) <= 0)    ? 0    : (mPreviousVolumeBassRead - 8);
+    inf = ((mPreviousVolumeBassRead - 8) >  1023) ? 0    : (mPreviousVolumeBassRead - 8);
     if (mVolumeBassRead <  8) {
       mVolumeBass = 0;
       if (mPreviousVolumeBassRead >= 8) {
         mVolumeChanged = true;
+#ifdef DEBUG1
+      Serial.print("mVolumeBass = ");
+      Serial.println(mVolumeBass);
+#ifdef DEBUG2
+      Serial.print("mVolumeBassRead = ");
+      Serial.println(mVolumeBassRead);
+      Serial.print("mPreviousVolumeBassRead = ");
+      Serial.println(mPreviousVolumeBassRead);
+#endif
+#endif
       }
       mPreviousVolumeBassRead = mVolumeBassRead;
     }
@@ -605,45 +666,55 @@ void loop() {
     /* Compute and set Volumes Values */
     if (mVolumeChanged) {
       mVolumeChanged = false;
-      /* Compute right bass */
-      mRightBass    = (unsigned char) (mVolumeGeneral - (MAX_VOLUME_BASS    - mVolumeBass)    - (MID_VOLUME_BALANCE - mBalance));
-      /* Compute left bass */
-      mLeftBass     = (unsigned char) (mVolumeGeneral - (MAX_VOLUME_BASS    - mVolumeBass)    - (mBalance - MID_VOLUME_BALANCE));
-      /* Compute right medium */
-      mRightMedium  = (unsigned char) (mVolumeGeneral - (MAX_VOLUME_MEDIUM  - mVolumeMedium)  - (MID_VOLUME_BALANCE - mBalance));
-      /* Compute left medium */
-      mLeftMedium   = (unsigned char) (mVolumeGeneral - (MAX_VOLUME_MEDIUM  - mVolumeMedium)  - (mBalance - MID_VOLUME_BALANCE));
-      /* Compute right tweeter */
-      mRightTweeter = (unsigned char) (mVolumeGeneral - (MAX_VOLUME_TWEETER - mVolumeTweeter) - (MID_VOLUME_BALANCE - mBalance));
-      /* Compute left tweeter */
-      mLeftTweeter  = (unsigned char) (mVolumeGeneral - (MAX_VOLUME_TWEETER - mVolumeTweeter) - (mBalance - MID_VOLUME_BALANCE));
+      if(mVolumeGeneral == 0) {
+        hard_mute();
+      }
+      else {
+        /* Compute right bass */
+        mRightBass    = (unsigned char) (mVolumeGeneral - (MAX_VOLUME_BASS    - mVolumeBass)    - (MID_VOLUME_BALANCE - mBalance));
+        /* Compute left bass */
+        mLeftBass     = (unsigned char) (mVolumeGeneral - (MAX_VOLUME_BASS    - mVolumeBass)    - (mBalance - MID_VOLUME_BALANCE));
+        /* Compute right medium */
+        mRightMedium  = (unsigned char) (mVolumeGeneral - (MAX_VOLUME_MEDIUM  - mVolumeMedium)  - (MID_VOLUME_BALANCE - mBalance));
+        /* Compute left medium */
+        mLeftMedium   = (unsigned char) (mVolumeGeneral - (MAX_VOLUME_MEDIUM  - mVolumeMedium)  - (mBalance - MID_VOLUME_BALANCE));
+        /* Compute right tweeter */
+        mRightTweeter = (unsigned char) (mVolumeGeneral - (MAX_VOLUME_TWEETER - mVolumeTweeter) - (MID_VOLUME_BALANCE - mBalance));
+        /* Compute left tweeter */
+        mLeftTweeter  = (unsigned char) (mVolumeGeneral - (MAX_VOLUME_TWEETER - mVolumeTweeter) - (mBalance - MID_VOLUME_BALANCE));
 
-      /* Handle when one of the volume is bigger than 127 due to balance !! */
-      mRightBass    = (mRightBass    > 127) ? 127 : mRightBass;
-      mLeftBass     = (mLeftBass     > 127) ? 127 : mLeftBass;
-      mRightMedium  = (mRightMedium  > 127) ? 127 : mRightMedium;
-      mLeftMedium   = (mLeftMedium   > 127) ? 127 : mLeftMedium;
-      mRightTweeter = (mRightTweeter > 127) ? 127 : mRightTweeter;
-      mLeftTweeter  = (mLeftTweeter  > 127) ? 127 : mLeftTweeter;
+        /* Handle when one of the volume is bigger than 127 due to balance !! */
+        mRightBass    = (mRightBass    > 127) ? 127 : mRightBass;
+        mLeftBass     = (mLeftBass     > 127) ? 127 : mLeftBass;
+        mRightMedium  = (mRightMedium  > 127) ? 127 : mRightMedium;
+        mLeftMedium   = (mLeftMedium   > 127) ? 127 : mLeftMedium;
+        mRightTweeter = (mRightTweeter > 127) ? 127 : mRightTweeter;
+        mLeftTweeter  = (mLeftTweeter  > 127) ? 127 : mLeftTweeter;
 
-      /* Set Volumes values */
-      /* Add 128 since bit 7 is used for Mute. */
-      setVolumeValue(((mRightBass    ==0) ? 0 : mRightBass    + 128), VOLUME_SELECT_BASS_RIGHT_ADDR   );
-      setVolumeValue(((mLeftBass     ==0) ? 0 : mLeftBass     + 128), VOLUME_SELECT_BASS_LEFT_ADDR    );
-      setVolumeValue(((mRightMedium  ==0) ? 0 : mRightMedium  + 128), VOLUME_SELECT_MEDIUM_RIGHT_ADDR );
-      setVolumeValue(((mLeftMedium   ==0) ? 0 : mLeftMedium   + 128), VOLUME_SELECT_MEDIUM_LEFT_ADDR  );
-      setVolumeValue(((mRightTweeter ==0) ? 0 : mRightTweeter + 128), VOLUME_SELECT_TWEETER_RIGHT_ADDR);
-      setVolumeValue(((mLeftTweeter  ==0) ? 0 : mLeftTweeter  + 128), VOLUME_SELECT_TWEETER_LEFT_ADDR );
+        /* Set Volumes values */
+        /* Add 128 since bit 7 is used for Mute. */
+        setVolumeValue(((mRightBass    ==0) ? 0 : mRightBass    + 128), VOLUME_SELECT_BASS_RIGHT_ADDR   );
+        setVolumeValue(((mLeftBass     ==0) ? 0 : mLeftBass     + 128), VOLUME_SELECT_BASS_LEFT_ADDR    );
+        setVolumeValue(((mRightMedium  ==0) ? 0 : mRightMedium  + 128), VOLUME_SELECT_MEDIUM_RIGHT_ADDR );
+        setVolumeValue(((mLeftMedium   ==0) ? 0 : mLeftMedium   + 128), VOLUME_SELECT_MEDIUM_LEFT_ADDR  );
+        setVolumeValue(((mRightTweeter ==0) ? 0 : mRightTweeter + 128), VOLUME_SELECT_TWEETER_RIGHT_ADDR);
+        setVolumeValue(((mLeftTweeter  ==0) ? 0 : mLeftTweeter  + 128), VOLUME_SELECT_TWEETER_LEFT_ADDR );
+      }
     }
     if (volumeWriteRepeate) {
-      delay(100);
-      setVolumeValue(((mRightBass    ==0) ? 0 : mRightBass    + 128), VOLUME_SELECT_BASS_RIGHT_ADDR   );
-      setVolumeValue(((mLeftBass     ==0) ? 0 : mLeftBass     + 128), VOLUME_SELECT_BASS_LEFT_ADDR    );
-      setVolumeValue(((mRightMedium  ==0) ? 0 : mRightMedium  + 128), VOLUME_SELECT_MEDIUM_RIGHT_ADDR );
-      setVolumeValue(((mLeftMedium   ==0) ? 0 : mLeftMedium   + 128), VOLUME_SELECT_MEDIUM_LEFT_ADDR  );
-      setVolumeValue(((mRightTweeter ==0) ? 0 : mRightTweeter + 128), VOLUME_SELECT_TWEETER_RIGHT_ADDR);
-      setVolumeValue(((mLeftTweeter  ==0) ? 0 : mLeftTweeter  + 128), VOLUME_SELECT_TWEETER_LEFT_ADDR );
       volumeWriteRepeate = false;
+      delay(100);
+      if(mVolumeGeneral == 0) {
+        hard_mute();
+      }
+      else {
+        setVolumeValue(((mRightBass    ==0) ? 0 : mRightBass    + 128), VOLUME_SELECT_BASS_RIGHT_ADDR   );
+        setVolumeValue(((mLeftBass     ==0) ? 0 : mLeftBass     + 128), VOLUME_SELECT_BASS_LEFT_ADDR    );
+        setVolumeValue(((mRightMedium  ==0) ? 0 : mRightMedium  + 128), VOLUME_SELECT_MEDIUM_RIGHT_ADDR );
+        setVolumeValue(((mLeftMedium   ==0) ? 0 : mLeftMedium   + 128), VOLUME_SELECT_MEDIUM_LEFT_ADDR  );
+        setVolumeValue(((mRightTweeter ==0) ? 0 : mRightTweeter + 128), VOLUME_SELECT_TWEETER_RIGHT_ADDR);
+        setVolumeValue(((mLeftTweeter  ==0) ? 0 : mLeftTweeter  + 128), VOLUME_SELECT_TWEETER_LEFT_ADDR );
+      }
     }
 
   }// if (mPowerUp)
