@@ -190,12 +190,13 @@ PGA2310::setVolume (uint8_t left, uint8_t right)
 }
 
 void
-PGA2310::setMultiVolume (uint8_t num, uint8_t vol[])
+PGA2310::setMultiVolume (uint8_t num, uint8_t vol*)
 {
+    if (vol == NULL) return;
     digitalWrite(_pinCS, LOW);
     for (int i=0 ; i < num ; i++)
     {
-        if (vol[i] <= MAX_GAIN)
+        if ((vol[i] != NULL) && (vol[i] <= MAX_GAIN))
         {
             SPIWrite(vol[i]);
         }
