@@ -26,8 +26,8 @@
  *         Gain (dB) = 31.5 − 0.5 * (255 − N)
  */
    #define UNITY_GAIN         192 //  0.0 dB
-   #define MAX_GAIN    UNITY_GAIN //  0.0 dB
-/* #define MAX_GAIN           255 // 31.5 dB */
+/* #define MAX_GAIN    UNITY_GAIN //  0.0 dB */
+   #define MAX_GAIN           255 // 31.5 dB
 
 class PGA2310 {
 public:
