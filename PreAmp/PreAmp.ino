@@ -166,13 +166,22 @@ void VolumeDownMotor() {
 
 void mute(){
   if (mMute) {
+    /* Set all 0 */
+    uint8_t volumeValues[6] = {0, 0, 0, 0, 0, 0};
+    cs3310.setMultiVolume(6, volumeValues);
   }
   else {
+    /* Set Volumes values */
+    uint8_t volumeValues[6] = {mRightBass, mLeftBass, mRightMedium, mLeftMedium, mRightTweeter, mLeftTweeter};
+    cs3310.setMultiVolume(6, volumeValues);
   }
   mMute = !mMute;
 }
 
 void hard_mute(){
+  /* Set all 0 */
+  uint8_t volumeValues[6] = {0, 0, 0, 0, 0, 0};
+  cs3310.setMultiVolume(6, volumeValues);
 }
 
 void changeSource(byte newVal) {
