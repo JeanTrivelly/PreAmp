@@ -41,7 +41,7 @@
 #define VOLUME_SPI_SDATA_I            1
 #define VOLUME_SPI_SCLK               2
 #define VOLUME_ZCEN                   3
-#define VOLUME_HARD_MUTE              NULL
+#define VOLUME_HARD_MUTE              7
 PGA2310 cs3310(VOLUME_SPI_CS,
                VOLUME_SPI_SDATA_I,
                VOLUME_SPI_SCLK,
@@ -266,7 +266,7 @@ void setup()
   irrecv.enableIRIn();
 
   // Init CS3310
-  cs3310.begin();
+  cs3310.begin(true);
 }
 
 void loop() {
