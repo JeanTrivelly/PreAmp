@@ -109,27 +109,32 @@ volatile boolean mPoweredDownUserForced = false;
 // So each segment duration is 93.75ms => 94ms.
 #define VOLUME_TIME 94
 
-unsigned int mVolumeGeneral             = 0;
+uint8_t      mVolumeGeneral             = 0;
 unsigned int mVolumeGeneralRead         = 0;
 unsigned int mPreviousVolumeGeneralRead = 0;
-unsigned int mBalance                   = 0;
+
+uint8_t      mBalance                   = 0;
 unsigned int mBalanceRead               = 0;
 unsigned int mPreviousBalanceRead       = 0;
-unsigned int mVolumeTweeter             = 0;
+
+uint8_t      mVolumeTweeter             = 0;
 unsigned int mVolumeTweeterRead         = 0;
 unsigned int mPreviousVolumeTweeterRead = 0;
-unsigned int mVolumeMedium              = 0;
+
+uint8_t      mVolumeMedium              = 0;
 unsigned int mVolumeMediumRead          = 0;
 unsigned int mPreviousVolumeMediumRead  = 0;
-unsigned int mVolumeBass                = 0;
+
+uint8_t      mVolumeBass                = 0;
 unsigned int mVolumeBassRead            = 0;
 unsigned int mPreviousVolumeBassRead    = 0;
-uint8_t mRightBass            = 0;
-uint8_t mLeftBass             = 0;
-uint8_t mRightMedium          = 0;
-uint8_t mLeftMedium           = 0;
-uint8_t mRightTweeter         = 0;
-uint8_t mLeftTweeter          = 0;
+
+uint8_t      mRightBass                 = 0;
+uint8_t      mLeftBass                  = 0;
+uint8_t      mRightMedium               = 0;
+uint8_t      mLeftMedium                = 0;
+uint8_t      mRightTweeter              = 0;
+uint8_t      mLeftTweeter               = 0;
 
 boolean mVolumeChanged     = false;
 
@@ -139,6 +144,7 @@ boolean mVolumeChanged     = false;
 #define MAX_VOLUME_TWEETER 255
 #define MAX_VOLUME_MEDIUM  255
 #define MAX_VOLUME_BASS    255
+#define MAX_VOLUME_BALANCE 255
 #define MID_VOLUME_BALANCE 127
 
 
@@ -213,6 +219,11 @@ void isrPwrService() {
 }
 
 uint8_t normalize_uint8(int16_t value) {
+  if (value <= 0)   return 0;
+  if (value >= 255) return 255;
+  return (uint8_t)value;
+}
+uint8_t normalize_uint8(float value) {
   if (value <= 0)   return 0;
   if (value >= 255) return 255;
   return (uint8_t)value;
@@ -454,20 +465,20 @@ void loop() {
      * Where 255 coresponds to +31.5dB and 0 to -95.5dB.
      */
     mVolumeGeneralRead = analogRead(VOLUME_SENSE_GENERAL);
-    int16_t sup = ((mPreviousVolumeGeneralRead + 4) >= 1023) ? 1023 : (mPreviousVolumeGeneralRead + 4);
-    int16_t inf = ((mPreviousVolumeGeneralRead - 4) <=    0) ?    0 : (mPreviousVolumeGeneralRead - 4);
+    uint16_t sup = ((mPreviousVolumeGeneralRead + 4) >= 1023) ? 1023 : (mPreviousVolumeGeneralRead + 4);
+    uint16_t inf = ((mPreviousVolumeGeneralRead - 4) <=    0) ?    0 : (mPreviousVolumeGeneralRead - 4);
     if (mVolumeGeneralRead < 4) {
       mVolumeGeneral = 0;
       if (mPreviousVolumeGeneralRead >= 4) {
         mVolumeChanged = true;
 #ifdef DEBUG1
-      Serial.print("mVolumeGeneral = ");
-      Serial.println(mVolumeGeneral);
+        Serial.print("mVolumeGeneral = ");
+        Serial.println(mVolumeGeneral);
 #ifdef DEBUG2
-      Serial.print("mVolumeGeneralRead = ");
-      Serial.println(mVolumeGeneralRead);
-      Serial.print("mPreviousVolumeGeneralRead = ");
-      Serial.println(mPreviousVolumeGeneralRead);
+        Serial.print("mVolumeGeneralRead = ");
+        Serial.println(mVolumeGeneralRead);
+        Serial.print("mPreviousVolumeGeneralRead = ");
+        Serial.println(mPreviousVolumeGeneralRead);
 #endif
 #endif
       }
@@ -475,7 +486,7 @@ void loop() {
     }
     else if (((mVolumeGeneralRead >  sup)||
               (mVolumeGeneralRead <= inf)  )) {
-      mVolumeGeneral = mVolumeGeneralRead >> 2;
+      mVolumeGeneral = (uint8_t) mVolumeGeneralRead >> 2;
       mVolumeChanged = true;
 #ifdef DEBUG1
       Serial.print("mVolumeGeneral = ");
@@ -506,13 +517,13 @@ void loop() {
       if (mPreviousBalanceRead >= 4) {
         mVolumeChanged = true;
 #ifdef DEBUG1
-      Serial.print("mBalance = ");
-      Serial.println(mBalance);
+        Serial.print("mBalance = ");
+        Serial.println(mBalance);
 #ifdef DEBUG2
-      Serial.print("mBalanceRead = ");
-      Serial.println(mBalanceRead);
-      Serial.print("mPreviousBalanceRead = ");
-      Serial.println(mPreviousBalanceRead);
+        Serial.print("mBalanceRead = ");
+        Serial.println(mBalanceRead);
+        Serial.print("mPreviousBalanceRead = ");
+        Serial.println(mPreviousBalanceRead);
 #endif
 #endif
       }
@@ -520,7 +531,7 @@ void loop() {
     }
     else if (((mBalanceRead >  sup)||
               (mBalanceRead <= inf)  )) {
-      mBalance = mBalanceRead >> 2;
+      mBalance = (uint8_t) mBalanceRead >> 2;
       mVolumeChanged = true;
 #ifdef DEBUG1
       Serial.print("mBalance = ");
@@ -543,13 +554,13 @@ void loop() {
       if (mPreviousVolumeTweeterRead >= 4) {
         mVolumeChanged = true;
 #ifdef DEBUG1
-      Serial.print("mVolumeTweeter = ");
-      Serial.println(mVolumeTweeter);
+        Serial.print("mVolumeTweeter = ");
+        Serial.println(mVolumeTweeter);
 #ifdef DEBUG2
-      Serial.print("mVolumeTweeterRead = ");
-      Serial.println(mVolumeTweeterRead);
-      Serial.print("mPreviousVolumeTweeterRead = ");
-      Serial.println(mPreviousVolumeTweeterRead);
+        Serial.print("mVolumeTweeterRead = ");
+        Serial.println(mVolumeTweeterRead);
+        Serial.print("mPreviousVolumeTweeterRead = ");
+        Serial.println(mPreviousVolumeTweeterRead);
 #endif
 #endif
       }
@@ -557,7 +568,7 @@ void loop() {
     }
     else if (((mVolumeTweeterRead >  sup)||
               (mVolumeTweeterRead <= inf)  )) {
-      mVolumeTweeter = mVolumeTweeterRead >> 2;
+      mVolumeTweeter = (uint8_t) mVolumeTweeterRead >> 2;
       mVolumeChanged = true;
 #ifdef DEBUG1
       Serial.print("mVolumeTweeter = ");
@@ -580,13 +591,13 @@ void loop() {
       if (mPreviousVolumeMediumRead >= 4) {
         mVolumeChanged = true;
 #ifdef DEBUG1
-      Serial.print("mVolumeMedium = ");
-      Serial.println(mVolumeMedium);
+        Serial.print("mVolumeMedium = ");
+        Serial.println(mVolumeMedium);
 #ifdef DEBUG2
-      Serial.print("mVolumeMediumRead = ");
-      Serial.println(mVolumeMediumRead);
-      Serial.print("mPreviousVolumeMediumRead = ");
-      Serial.println(mPreviousVolumeMediumRead);
+        Serial.print("mVolumeMediumRead = ");
+        Serial.println(mVolumeMediumRead);
+        Serial.print("mPreviousVolumeMediumRead = ");
+        Serial.println(mPreviousVolumeMediumRead);
 #endif
 #endif
       }
@@ -594,7 +605,7 @@ void loop() {
     }
     else if (((mVolumeMediumRead >  sup)||
               (mVolumeMediumRead <= inf)  )) {
-      mVolumeMedium = mVolumeMediumRead >> 2;
+      mVolumeMedium = (uint8_t) mVolumeMediumRead >> 2;
       mVolumeChanged = true;
 #ifdef DEBUG1
       Serial.print("mVolumeMedium = ");
@@ -617,13 +628,13 @@ void loop() {
       if (mPreviousVolumeBassRead >= 4) {
         mVolumeChanged = true;
 #ifdef DEBUG1
-      Serial.print("mVolumeBass = ");
-      Serial.println(mVolumeBass);
+        Serial.print("mVolumeBass = ");
+        Serial.println(mVolumeBass);
 #ifdef DEBUG2
-      Serial.print("mVolumeBassRead = ");
-      Serial.println(mVolumeBassRead);
-      Serial.print("mPreviousVolumeBassRead = ");
-      Serial.println(mPreviousVolumeBassRead);
+        Serial.print("mVolumeBassRead = ");
+        Serial.println(mVolumeBassRead);
+        Serial.print("mPreviousVolumeBassRead = ");
+        Serial.println(mPreviousVolumeBassRead);
 #endif
 #endif
       }
@@ -631,7 +642,7 @@ void loop() {
     }
     else if (((mVolumeBassRead >  sup)||
               (mVolumeBassRead <= inf)  )) {
-      mVolumeBass = mVolumeBassRead >> 2;
+      mVolumeBass = (uint8_t) mVolumeBassRead >> 2;
       mVolumeChanged = true;
 #ifdef DEBUG1
       Serial.print("mVolumeBass = ");
@@ -650,28 +661,24 @@ void loop() {
     if (mVolumeChanged) {
       mVolumeChanged = false;
 
-      uint8_t val1, val2, val3;
-      val1 = val2 = val3 = 0;
-
-      val2 = normalize_uint8(MID_VOLUME_BALANCE - mBalance);
-      val3 = normalize_uint8(mBalance - MID_VOLUME_BALANCE);
+      float rBalance = 0, lBalance = 0;
+      lBalance = normalize_uint8(MAX_VOLUME_BALANCE - mBalance) / MID_VOLUME_BALANCE;
+      rBalance = mBalance / MID_VOLUME_BALANCE;
+      
       /* Compute right bass */
-      val1 = normalize_uint8(MAX_VOLUME_BASS - mVolumeBass);
-      mRightBass = normalize_uint8(mVolumeGeneral - val1 - val2);
+      mRightBass = normalize_uint8(mVolumeGeneral * (float) (mVolumeBass/MAX_VOLUME_BASS) * rBalance);
       /* Compute left bass */
-      mLeftBass  = normalize_uint8(mVolumeGeneral - val1 - val3);
+      mLeftBass  = normalize_uint8(mVolumeGeneral * (float) (mVolumeBass/MAX_VOLUME_BASS) * lBalance);
 
       /* Compute right medium */
-      val1 = normalize_uint8(MAX_VOLUME_MEDIUM - mVolumeMedium);
-      mRightMedium  = normalize_uint8(mVolumeGeneral - val1 - val2);
+      mRightMedium  = normalize_uint8(mVolumeGeneral * (float) (mVolumeMedium/MAX_VOLUME_MEDIUM) * rBalance);
       /* Compute left medium */
-      mLeftMedium   = normalize_uint8(mVolumeGeneral - val1 - val3);
+      mLeftMedium   = normalize_uint8(mVolumeGeneral * (float) (mVolumeMedium/MAX_VOLUME_MEDIUM) * lBalance);
       
       /* Compute right tweeter */
-      val1 = normalize_uint8(MAX_VOLUME_TWEETER - mVolumeTweeter);
-      mRightTweeter = normalize_uint8(mVolumeGeneral - val1 - val2);
+      mRightTweeter = normalize_uint8(mVolumeGeneral * (float) (mVolumeTweeter/MAX_VOLUME_TWEETER) * rBalance);
       /* Compute left tweeter */
-      mLeftTweeter  = normalize_uint8(mVolumeGeneral - val1 - val3);
+      mLeftTweeter  = normalize_uint8(mVolumeGeneral * (float) (mVolumeTweeter/MAX_VOLUME_TWEETER) * lBalance);
 
 #ifdef DEBUG1
       Serial.print("mRighBass = ")      ; Serial.print(mRightBass);
